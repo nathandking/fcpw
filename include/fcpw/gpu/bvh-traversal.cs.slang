@@ -31,6 +31,8 @@ uniform ParameterBlock<Bvh<SnchNode, Triangle, Edge>> gBvh;
 #error _BVH_TYPE is not set to a supported type
 #endif
 
+groupshared Atomic<float> gPathDiff;
+
 [shader("compute")]
 [numthreads(256, 1, 1)]
 void rayIntersection(uint3 threadId: SV_DispatchThreadID,
@@ -100,6 +102,57 @@ void closestPoint(uint3 threadId: SV_DispatchThreadID,
     {
         interactions[index] = i;
     }
+}
+
+[shader("compute")]
+[numthreads(256, 1, 1)]
+void geoPath(uint3 threadId: SV_DispatchThreadID,
+             uniform RWStructuredBuffer<BoundingSphere> inputBoundingSpheres,
+             uniform RWStructuredBuffer<BoundingSphere> outputBoundingSpheres,
+             uniform StructuredBuffer<uint32_t> prevNbr,
+             uniform StructuredBuffer<uint32_t> nextNbr,
+             uniform uint nQueries)
+{
+    uint index = threadId.x;
+    if (index >= nQueries)
+    {
+        return;
+    }
+
+    float mu = 0.5;
+    BoundingSphere s = inputBoundingSpheres[index];
+    for (size_t dim = 0; dim < 3; ++dim)
+    {
+        s.c[dim] = inputBoundingSpheres[index].c[dim] + mu * (inputBoundingSpheres[prevNbr[index]].c[dim] - 2.0f * inputBoundingSpheres[index].c[dim] + inputBoundingSpheres[nextNbr[index]].c[dim]);
+    }
+
+    // bool m_is_closed = false;
+    // if (m_is_closed) // apply periodic BCs
+    // {
+    //     for (size_t d = 0; d < 3; ++d)
+    //     {
+    //         path[0][d] = initial_path[0][d] + mu * (initial_path[path.size() - 1][d] - 2.0 * initial_path[0][d] + initial_path[1][d]);
+    //         path[path.size() - 1][d] = initial_path[path.size() - 1][d] + mu * (initial_path[path.size() - 2][d] - 2.0 * initial_path[path.size() - 1][d] + initial_path[0][d]);
+    //     }
+    // }
+    
+    Interaction i;
+    bool found = gBvh.findClosestPoint(s, i, false);
+    if (found)
+    {
+        outputBoundingSpheres[index].c = i.p;
+    }
+
+    // float dist = 0.0f;
+    // for (size_t dim = 0; dim < 3; ++dim)
+    // {
+    //     float diff = inputBoundingSpheres[index].c[dim] - outputBoundingSpheres[index].c[dim];
+    //     dist += diff * diff;
+    // }
+    // dist = sqrt(dist);
+
+    // gPathDiff.add(dist);
+    inputBoundingSpheres[index].c = outputBoundingSpheres[index].c;
 }
 
 [shader("compute")]

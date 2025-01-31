@@ -265,6 +265,38 @@ inline void GPUScene<DIM>::findClosestPoints(std::vector<GPUBoundingSphere>& bou
 }
 
 template<size_t DIM>
+inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputBoundingSpheres,
+                                            std::vector<GPUBoundingSphere>& outputBoundingSpheres)
+{
+    // initialize shader
+    if (geoPathShader.reflection == nullptr) {
+        loadModuleLibrary(gpuContext, fcpwModule, geoPathShader);
+        loadShader(gpuContext, traversalShaderModule, "geoPath", geoPathShader);
+    }
+
+    // create GPU buffers
+    GPUGeoPathBuffers gpuGeoPathBuffers;
+    gpuGeoPathBuffers.allocate(gpuContext.device, inputBoundingSpheres);
+
+    // run closest point shader
+    int nQueries = (int)inputBoundingSpheres.size();
+    int nThreadGroups = countThreadGroups(nQueries, nThreadsPerGroup, printLogs);
+    bool continueIteration = true;
+    size_t counter = 0;
+    // while(continueIteration)
+    while(counter < 1000)
+    {
+        if(counter == 1000 - 1)
+        {
+            continueIteration = false;
+        }
+        runTraversal<GPUBvhBuffers, GPUGeoPathBuffers>(gpuContext, geoPathShader,
+                                                             gpuBvhBuffers, gpuGeoPathBuffers, outputBoundingSpheres, continueIteration,
+                                                             nThreadGroups, printLogs);
+    }
+}
+
+template<size_t DIM>
 inline void GPUScene<DIM>::findClosestSilhouettePoints(Eigen::MatrixXf& queryPoints,
                                                        Eigen::VectorXf& squaredMaxRadii,
                                                        Eigen::VectorXi& flipNormalOrientation,

@@ -934,6 +934,57 @@ public:
     }
 };
 
+class GPUGeoPathBuffers {
+public:
+    GPUBuffer inputBoundingSpheres = {};
+    GPUBuffer outputBoundingSpheres = {};
+    uint32_t nQueries = 0;
+    std::vector<uint32_t> prevNbr;
+    std::vector<uint32_t> nextNbr;
+
+    void allocate(ComPtr<IDevice>& device,
+                  std::vector<GPUBoundingSphere>& boundingSpheresData) {
+        Slang::Result createInputBufferResult = inputBoundingSpheres.create<GPUBoundingSphere>(
+            device, false, boundingSpheresData.data(), boundingSpheresData.size());
+        Slang::Result createOutputBufferResult = outputBoundingSpheres.create<GPUBoundingSphere>(
+            device, false, boundingSpheresData.data(), boundingSpheresData.size());
+        if (createInputBufferResult != SLANG_OK) {
+            std::cout << "failed to create inputBoundingSpheres buffer" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (createOutputBufferResult != SLANG_OK) {
+            std::cout << "failed to create outputBoundingSpheres buffer" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        nQueries = (uint32_t)boundingSpheresData.size();
+
+        prevNbr.resize(nQueries);
+        nextNbr.resize(nQueries);
+        prevNbr[0] = 0;
+        nextNbr[nQueries - 1] = nQueries - 1;
+        for(uint32_t i = 1; i < nQueries - 1; ++i)
+        {
+            prevNbr[i] = i - 1;
+            nextNbr[i] = i + 1;
+        }
+    }
+
+    int setResources(ShaderCursor& cursor) const {
+        cursor.getPath("inputBoundingSpheres").setResource(inputBoundingSpheres.view);
+        cursor.getPath("outputBoundingSpheres").setResource(outputBoundingSpheres.view);
+        cursor.getPath("prevNbr").setResource(prevNbr);
+        cursor.getPath("nextNbr").setResource(nextNbr);
+        cursor.getPath("nQueries").setData(nQueries);
+
+        return 5;
+    }
+
+    void read(ComPtr<IDevice>& device, std::vector<GPUBoundingSphere>& boundingSpheresData) const {
+        outputBoundingSpheres.read(device, boundingSpheresData);
+    }
+};
+
 class GPUQueryClosestSilhouettePointBuffers {
 public:
     GPUBuffer boundingSpheres = {};

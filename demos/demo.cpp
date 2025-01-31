@@ -12,6 +12,15 @@
     > ./demos/demo [--useGpu]
 */
 
+#include <chrono>
+
+#include "geometrycentral/surface/flip_geodesics.h"
+#include "geometrycentral/surface/meshio.h"
+
+std::filesystem::path currentDirectory = std::filesystem::current_path().parent_path();
+std::string g_mesh_name = (currentDirectory / "demos" / "dragon.obj").string();
+std::vector<size_t> g_source_idx = {19732, 25383};
+
 #include <fcpw/fcpw.h>
 #include <fstream>
 #include <sstream>
@@ -185,6 +194,95 @@ void performClosestPointQueries(const std::vector<Vector<3>>& queryPoints,
 
 #endif
 
+// distance between two points u and v, i.e., Euclidean distance ||u - v||_2
+float Distance(const Vector<3> &u, const Vector<3> &v)
+{
+    assert(u.size() == v.size());
+
+    float distance = 0.0;
+    for(size_t d = 0; d < u.size(); ++d) 
+    {
+        distance += pow(u[d] - v[d], 2);
+    }
+    distance = sqrt(distance);
+
+    return distance;
+}
+
+size_t GetGeodesicPath(Vector<3> &p_start, Vector<3> &p_end, size_t max_iters, std::vector<Vector<3>> &initial_path, std::vector<Vector<3>> &path, Scene<3>& scene)
+{   
+    //////////////////////////////////////////////////////////
+    // now compute geodesic path via harmonic map
+    //////////////////////////////////////////////////////////
+
+    // float dist_max = 0.001;
+
+    // NOTE: we do not need adaptivity because the initial path is always in the mesh surface when constructed by Dijkstra's algorithm
+    // std::cout << "Before adaptivity = " << initial_path.size() << std::endl;
+    // SpatialAdaptivity(surface_tube, initial_path, dist_max);
+    // std::cout << "After adaptivity = " << initial_path.size() << std::endl;
+
+// #ifdef POLYSCOPE
+//     if(m_is_closed)
+//     {
+//         polyscope::registerCurveNetworkLoop("inital refined cp path", initial_path)->setRadius(0.004)->setColor(init_blue);
+//     }
+//     else
+//     {
+//         polyscope::registerCurveNetworkLine("inital refined cp path", initial_path)->setRadius(0.004)->setColor(init_blue);
+//     }
+// #endif
+
+    path = initial_path;
+
+    float path_diff = 1.0;
+    size_t iter = 0;
+    float mu = 0.2; // dt / dx^2, with dt = 0.5 dx^2
+    while(path_diff > 1e-8 && iter < max_iters)
+    {
+        ++iter;
+        // std::cout << "Iteration " << iter << std::endl;
+        // cout << "Path size = " << initial_path.size() << endl;
+
+        // discretize a 1D line [0,1]
+        // independent heat flow for each coordinate along the 1D line M (explicit Euler)
+        for(size_t i = 1; i < path.size() - 1; ++i)
+        {
+            for(size_t d = 0; d < 3; ++d)
+            { 
+                path[i][d] = initial_path[i][d] + mu * (initial_path[i-1][d] - 2.0 * initial_path[i][d] + initial_path[i+1][d]);
+            }
+        }
+
+        bool m_is_closed = false;
+        if(m_is_closed) // apply periodic BCs
+        {
+            for(size_t d = 0; d < 3; ++d)
+            { 
+                path[0][d] = initial_path[0][d] + mu * (initial_path[path.size() - 1][d] - 2.0 * initial_path[0][d] + initial_path[1][d]);
+                path[path.size() - 1][d] = initial_path[path.size() - 1][d] + mu * (initial_path[path.size() - 2][d] - 2.0 * initial_path[path.size() - 1][d] + initial_path[0][d]);
+            }
+        }
+
+        // project points back onto target surface N
+        std::vector<Vector<3>> cp_path;
+        performClosestPointQueries(path, cp_path, scene);
+
+        path_diff = 0.0;
+        for(size_t i = 0; i < cp_path.size(); ++i)
+        {
+            path_diff += Distance(initial_path[i], cp_path[i]);
+        }  
+        path_diff /= cp_path.size();
+
+        // SpatialAdaptivity(surface_tube, path, dist_max);
+
+        initial_path = cp_path;
+    }
+
+    return iter;
+}
+
 template <typename T>
 void guiCallback(std::vector<Vector<3>>& queryPoints,
                  std::vector<Vector<3>>& closestPoints,
@@ -228,9 +326,6 @@ void visualize(const std::vector<Vector<3>>& positions,
     polyscope::options::autocenterStructures = false;
     polyscope::options::groundPlaneMode = polyscope::GroundPlaneMode::None;
 
-    // initialize polyscope
-    polyscope::init();
-
     // register mesh and callback
     polyscope::registerSurfaceMesh("mesh", positions, indices);
     polyscope::state::userCallback = std::bind(&guiCallback<T>, std::ref(queryPoints),
@@ -243,11 +338,9 @@ void visualize(const std::vector<Vector<3>>& positions,
 void run(bool useGpu)
 {
     // load obj file
-    std::filesystem::path currentDirectory = std::filesystem::current_path().parent_path();
-    std::string objFilePath = (currentDirectory / "demos" / "dragon.obj").string();
     std::vector<Vector<3>> positions;
     std::vector<Vector3i> indices;
-    loadObj(objFilePath, positions, indices);
+    loadObj(g_mesh_name, positions, indices);
 
     // generate random query points for closest point queries
     Vector<3> boxMin = Vector<3>::Constant(std::numeric_limits<float>::infinity());
@@ -263,6 +356,49 @@ void run(bool useGpu)
     for (int i = 0; i < numQueryPoints; i++) {
         queryPoints.emplace_back(boxMin + boxExtent.cwiseProduct(uniformRealRandomVector<3>()));
     }
+
+    // Load a mesh
+    std::unique_ptr<geometrycentral::surface::ManifoldSurfaceMesh> mesh;
+    std::unique_ptr<geometrycentral::surface::VertexPositionGeometry> geometry;
+    std::tie(mesh, geometry) = geometrycentral::surface::readManifoldSurfaceMesh(g_mesh_name);
+
+    // Create a path network as a Dijkstra path between endpoints
+    std::unique_ptr<geometrycentral::surface::FlipEdgeNetwork> edgeNetwork;
+    geometrycentral::surface::Vertex vStart = mesh->vertex(g_source_idx[0]);
+    geometrycentral::surface::Vertex vEnd = mesh->vertex(g_source_idx[1]);
+    edgeNetwork = geometrycentral::surface::FlipEdgeNetwork::constructFromDijkstraPath(*mesh, *geometry, vStart, vEnd);
+
+    edgeNetwork->posGeom = geometry.get();
+    std::vector<std::vector<geometrycentral::Vector3>> init_polyline = edgeNetwork->getPathPolyline3D();
+    std::vector<Vector<3>> initial_path(init_polyline[0].size());
+    for(size_t i = 0; i < initial_path.size(); ++i)
+    {
+        for(size_t d = 0; d < 3; ++d)
+        {
+            initial_path[i][d] = init_polyline[0][i][d];
+        }
+    }
+
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
+
+    // Make the path a geodesic
+    edgeNetwork->iterativeShorten();
+
+    // Extract the result as a polyline along the surface
+    edgeNetwork->posGeom = geometry.get();
+    std::vector<std::vector<geometrycentral::Vector3>> polyline = edgeNetwork->getPathPolyline3D();
+
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<float> elapsed_seconds = end - start;
+    std::cout << "Flip Geo path total elapsed time: " << elapsed_seconds.count() << "s\n";
+
+    // initialize polyscope
+    polyscope::init();
+
+    polyscope::registerSurfaceMesh("mesh", geometry->vertexPositions, mesh->getFaceVertexList());
+    polyscope::registerCurveNetworkLine("Initial Path", initial_path);
+    polyscope::registerCurveNetworkLine("Flip Geodesic Path", polyline[0]);
 
     if (useGpu) {
 #ifdef FCPW_USE_GPU
@@ -288,9 +424,52 @@ void run(bool useGpu)
         Scene<3> scene;
         loadFcpwScene(positions, indices, true, scene);
 
-        // visualize results
-        std::vector<Vector<3>> closestPoints;
-        visualize(positions, indices, queryPoints, closestPoints, scene);
+        // cp approach
+        Vector<3> p_start;
+        Vector<3> p_end;
+        for(size_t d = 0; d < 3; ++d)
+        {
+            p_start[d] = geometry->vertexPositions[g_source_idx[0]][d];
+            p_end[d] = geometry->vertexPositions[g_source_idx[1]][d];
+        }
+
+        std::vector<Vector<3>> path;
+        size_t max_iters = 10000;
+
+        start = std::chrono::system_clock::now();
+
+        GetGeodesicPath(p_start, p_end, max_iters, initial_path, path, scene);
+        
+        end = std::chrono::system_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << "Geo path total elapsed time: " << elapsed_seconds.count() << "s\n";
+
+    #ifdef POLYSCOPE
+        polyscope::registerCurveNetworkLine("Flip Geo Path", polyline[0]);
+        polyscope::registerSurfaceMesh("Surface", surface_specs.Mesh().vertices, surface_specs.Mesh().faces)->setSmoothShade(true);
+        polyscope::registerCurveNetworkLine("Path", path);
+    #endif
+
+        float length = 0.0;
+        for(size_t i = 0; i < path.size() - 1; ++i)
+        {
+            float sum_diff_sqrd = 0.0;
+            for(size_t d = 0; d < 3; ++d)
+            {
+                sum_diff_sqrd += pow(path[i+1][d] - path[i][d], 2);
+            }
+            length += sqrt(sum_diff_sqrd);
+        }
+
+        std::cout << "Harmonic total length = " << length << std::endl;
+
+        polyscope::registerCurveNetworkLine("CP Path", path);
+
+        polyscope::show();
+
+        // // visualize results
+        // std::vector<Vector<3>> closestPoints;
+        // visualize(positions, indices, queryPoints, closestPoints, scene);
     }
 }
 

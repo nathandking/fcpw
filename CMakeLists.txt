@@ -183,6 +183,7 @@ endif()
 
 if(FCPW_BUILD_DEMO)
     add_subdirectory(demos)
+    add_subdirectory(deps/geometry-central)
 endif()
 
 if(FCPW_BUILD_TESTS)
