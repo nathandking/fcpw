@@ -62,7 +62,7 @@ public:
                            bool recordNormals=false);
 
     void computeGeoPath(std::vector<GPUBoundingSphere>& inputBoundingSpheres,
-                                            std::vector<GPUBoundingSphere>& outputBoundingSpheres);
+                                            std::vector<GPUBoundingSphere>& outputBoundingSpheres);`
 
     // finds the closest points on the visibility silhouette in the scene to the given query points.
     // The max radius specifies a conservative radius guess around the query point inside which the
@@ -89,6 +89,7 @@ private:
     Shader rayIntersectionShader;
     Shader sphereIntersectionShader;
     Shader closestPointShader;
+    Shader geoPathShader;
     Shader closestSilhouettePointShader;
     uint32_t nThreadsPerGroup;
     bool printLogs;
