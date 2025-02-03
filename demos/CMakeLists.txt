@@ -12,7 +12,11 @@ endif()
 target_include_directories(demo PRIVATE ${FCPW_TESTS_TBB_INCLUDES})
 target_include_directories(demo PRIVATE ${FCPW_ARGS_INCLUDES})
 
+if(FCPW_ENABLE_POLYSCOPE)
+target_compile_definitions(demo PRIVATE -DFCPW_POLYSCOPE)
 target_link_libraries(demo polyscope)
+endif()
+
 target_link_libraries(demo geometry-central)
 
 if(FCPW_ENABLE_GPU_SUPPORT)

@@ -17,10 +17,6 @@
 #include "geometrycentral/surface/flip_geodesics.h"
 #include "geometrycentral/surface/meshio.h"
 
-std::filesystem::path currentDirectory = std::filesystem::current_path().parent_path();
-std::string g_mesh_name = (currentDirectory / "demos" / "dragon.obj").string();
-std::vector<size_t> g_source_idx = {19732, 25383};
-
 #include <fcpw/fcpw.h>
 #include <fstream>
 #include <sstream>
@@ -28,10 +24,17 @@ std::vector<size_t> g_source_idx = {19732, 25383};
 #ifdef FCPW_USE_GPU
     #include <fcpw/fcpw_gpu.h>
 #endif
-#include "polyscope/polyscope.h"
-#include "polyscope/surface_mesh.h"
-#include "polyscope/point_cloud.h"
-#include "polyscope/curve_network.h"
+
+std::filesystem::path currentDirectory = std::filesystem::current_path().parent_path();
+std::string g_mesh_name = (currentDirectory / "demos" / "dragon.obj").string();
+std::vector<size_t> g_source_idx = {19732, 25383};
+
+#ifdef FCPW_POLYSCOPE
+    #include "polyscope/polyscope.h"
+    #include "polyscope/surface_mesh.h"
+    #include "polyscope/point_cloud.h"
+    #include "polyscope/curve_network.h"
+#endif
 
 #include "args/args.hxx"
 
@@ -222,7 +225,7 @@ size_t GetGeodesicPath(Vector<3> &p_start, Vector<3> &p_end, size_t max_iters, s
     // SpatialAdaptivity(surface_tube, initial_path, dist_max);
     // std::cout << "After adaptivity = " << initial_path.size() << std::endl;
 
-// #ifdef POLYSCOPE
+// #ifdef FCPW_POLYSCOPE
 //     if(m_is_closed)
 //     {
 //         polyscope::registerCurveNetworkLoop("inital refined cp path", initial_path)->setRadius(0.004)->setColor(init_blue);
@@ -298,8 +301,10 @@ void guiCallback(std::vector<Vector<3>>& queryPoints,
     performClosestPointQueries(queryPoints, closestPoints, scene);
 
     // plot results
+#ifdef FCPW_POLYSCOPE
     polyscope::registerPointCloud("query points", queryPoints);
     polyscope::registerPointCloud("closest points", closestPoints);
+#endif
 
     std::vector<Vector2i> edgeIndices;
     std::vector<Vector<3>> edgePositions = queryPoints;
@@ -308,8 +313,10 @@ void guiCallback(std::vector<Vector<3>>& queryPoints,
         edgeIndices.emplace_back(Vector2i(i, i + queryPoints.size()));
     }
 
+#ifdef FCPW_POLYSCOPE
     auto network = polyscope::registerCurveNetwork("edges", edgePositions, edgeIndices);
     network->setRadius(0.005, false);
+#endif
 }
 
 template <typename T>
@@ -319,6 +326,7 @@ void visualize(const std::vector<Vector<3>>& positions,
                std::vector<Vector<3>>& closestPoints,
                T& scene)
 {
+#ifdef FCPW_POLYSCOPE
     // set a few options
     polyscope::options::programName = "FCPW Demo";
     polyscope::options::verbosity = 0;
@@ -333,6 +341,7 @@ void visualize(const std::vector<Vector<3>>& positions,
 
     // give control to polyscope gui
     polyscope::show();
+#endif
 }
 
 void run(bool useGpu)
@@ -393,12 +402,14 @@ void run(bool useGpu)
     std::chrono::duration<float> elapsed_seconds = end - start;
     std::cout << "Flip Geo path total elapsed time: " << elapsed_seconds.count() << "s\n";
 
+#ifdef FCPW_POLYSCOPE
     // initialize polyscope
     polyscope::init();
 
     polyscope::registerSurfaceMesh("mesh", geometry->vertexPositions, mesh->getFaceVertexList());
     polyscope::registerCurveNetworkLine("Initial Path", initial_path);
     polyscope::registerCurveNetworkLine("Flip Geodesic Path", polyline[0]);
+#endif
 
     if (useGpu) {
 #ifdef FCPW_USE_GPU
@@ -444,9 +455,9 @@ void run(bool useGpu)
         elapsed_seconds = end - start;
         std::cout << "Geo path total elapsed time: " << elapsed_seconds.count() << "s\n";
 
-    #ifdef POLYSCOPE
+    #ifdef FCPW_POLYSCOPE
         polyscope::registerCurveNetworkLine("Flip Geo Path", polyline[0]);
-        polyscope::registerSurfaceMesh("Surface", surface_specs.Mesh().vertices, surface_specs.Mesh().faces)->setSmoothShade(true);
+        polyscope::registerSurfaceMesh("Surface", positions, indices)->setSmoothShade(true);
         polyscope::registerCurveNetworkLine("Path", path);
     #endif
 
@@ -463,9 +474,11 @@ void run(bool useGpu)
 
         std::cout << "Harmonic total length = " << length << std::endl;
 
+#ifdef FCPW_POLYSCOPE
         polyscope::registerCurveNetworkLine("CP Path", path);
 
         polyscope::show();
+#endif
 
         // // visualize results
         // std::vector<Vector<3>> closestPoints;
