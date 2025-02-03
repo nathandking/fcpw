@@ -221,7 +221,7 @@ void performGeoPath(const std::vector<Vector<3>>& queryPoints,
     // extract closest points
     closestPoints.clear();
     for (const std::vector<GPUBoundingSphere>& b: outputBoundingSpheres) {
-        closestPoints.emplace_back(Vector<3>(b.c.x, b.c.y, b.c.z));
+        closestPoints.emplace_back(Vector<3>(b.c[0], b.c[1], b.c[2]));
     }
 }
 
