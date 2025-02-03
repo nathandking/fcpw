@@ -981,7 +981,7 @@ public:
     }
 
     void read(ComPtr<IDevice>& device, std::vector<GPUBoundingSphere>& boundingSpheresData) const {
-        outputBoundingSpheres.read(device, boundingSpheresData);
+        outputBoundingSpheres.read(device, nQueries, boundingSpheresData);
     }
 };
 
