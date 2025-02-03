@@ -195,6 +195,28 @@ void performClosestPointQueries(const std::vector<Vector<3>>& queryPoints,
     }
 }
 
+template <>
+void performGeoPath(const std::vector<Vector<3>>& queryPoints,
+                                std::vector<Vector<3>>& closestPoints,
+                                GPUScene<3>& gpuScene)
+{
+    // initialize bounding spheres
+    std::vector<GPUBoundingSphere> inputBoundingSpheres;
+    std::vector<GPUBoundingSphere> outputBoundingSpheres;
+    for (const Vector<3>& q: queryPoints) {
+        float3 queryPoint = float3{q[0], q[1], q[2]};
+        inputBoundingSpheres.emplace_back(GPUBoundingSphere(queryPoint, maxFloat));
+    }
+\
+    gpuScene.computeGeoPath(inputBoundingSpheres, outputBoundingSpheres);
+
+    // extract closest points
+    closestPoints.clear();
+    for (const std::vector<GPUBoundingSphere>& b: outputBoundingSpheres) {
+        closestPoints.emplace_back(Vector<3>(b.c.x, b.c.y, b.c.z));
+    }
+}
+
 #endif
 
 // distance between two points u and v, i.e., Euclidean distance ||u - v||_2
@@ -422,9 +444,45 @@ void run(bool useGpu)
         GPUScene<3> gpuScene(currentDirectory.string(), printStats);
         gpuScene.transferToGPU(scene);
 
-        // visualize results
-        std::vector<Vector<3>> closestPoints;
-        visualize(positions, indices, queryPoints, closestPoints, gpuScene);
+        std::vector<Vector<3>> path;
+        size_t max_iters = 10000;
+
+        start = std::chrono::system_clock::now();
+
+        performGeoPath(initial_path, path, scene);
+        
+        end = std::chrono::system_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << "Geo path total elapsed time: " << elapsed_seconds.count() << "s\n";
+
+    #ifdef FCPW_POLYSCOPE
+        polyscope::registerCurveNetworkLine("Flip Geo Path", polyline[0]);
+        polyscope::registerSurfaceMesh("Surface", positions, indices)->setSmoothShade(true);
+        polyscope::registerCurveNetworkLine("Path", path);
+    #endif
+
+        float length = 0.0;
+        for(size_t i = 0; i < path.size() - 1; ++i)
+        {
+            float sum_diff_sqrd = 0.0;
+            for(size_t d = 0; d < 3; ++d)
+            {
+                sum_diff_sqrd += pow(path[i+1][d] - path[i][d], 2);
+            }
+            length += sqrt(sum_diff_sqrd);
+        }
+
+        std::cout << "Harmonic total length = " << length << std::endl;
+
+#ifdef FCPW_POLYSCOPE
+        polyscope::registerCurveNetworkLine("CP Path", path);
+
+        polyscope::show();
+#endif
+
+        // // visualize results
+        // std::vector<Vector<3>> closestPoints;
+        // visualize(positions, indices, queryPoints, closestPoints, gpuScene);
 #else
         std::cerr << "GPU support not enabled" << std::endl;
         exit(EXIT_FAILURE);
