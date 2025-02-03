@@ -195,6 +195,14 @@ void performClosestPointQueries(const std::vector<Vector<3>>& queryPoints,
     }
 }
 
+template <typename T>
+void performGeoPath(const std::vector<Vector<3>>& queryPoints,
+                                std::vector<Vector<3>>& closestPoints,
+                                T& scene)
+{
+    // do nothing
+}
+
 template <>
 void performGeoPath(const std::vector<Vector<3>>& queryPoints,
                                 std::vector<Vector<3>>& closestPoints,
