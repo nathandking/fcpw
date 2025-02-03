@@ -973,8 +973,8 @@ public:
     int setResources(ShaderCursor& cursor) const {
         cursor.getPath("inputBoundingSpheres").setResource(inputBoundingSpheres.view);
         cursor.getPath("outputBoundingSpheres").setResource(outputBoundingSpheres.view);
-        cursor.getPath("prevNbr").setResource(prevNbr.view);
-        cursor.getPath("nextNbr").setResource(nextNbr.view);
+        cursor.getPath("prevNbr").setData(prevNbr);
+        cursor.getPath("nextNbr").setData(nextNbr);
         cursor.getPath("nQueries").setData(nQueries);
 
         return 5;
