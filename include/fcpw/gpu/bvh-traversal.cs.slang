@@ -1,7 +1,5 @@
 import fcpw;
 
-#include <limits>
-
 #define UNDEFINED_BVH_TYPE 0
 #define LINE_SEGMENT_BVH 1
 #define TRIANGLE_BVH 2
