@@ -281,8 +281,8 @@ inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputB
     GPUGeoPathBuffers gpuGeoPathBuffers;
     gpuGeoPathBuffers.allocate(gpuContext.device, inputBoundingSpheres);
     
-    cout << "computeGeoPath - gpuGeoPathBuffers.inputBoundingSpheres size = " << gpuGeoPathBuffers.inputBoundingSpheres.size() << endl;
-    cout << "computeGeoPath - gpuGeoPathBuffers.outputBoundingSpheres size = " << gpuGeoPathBuffers.outputBoundingSpheres.size() << endl;
+    // cout << "computeGeoPath - gpuGeoPathBuffers.inputBoundingSpheres size = " << gpuGeoPathBuffers.inputBoundingSpheres.size() << endl;
+    // cout << "computeGeoPath - gpuGeoPathBuffers.outputBoundingSpheres size = " << gpuGeoPathBuffers.outputBoundingSpheres.size() << endl;
 
     // run closest point shader
     int nQueries = (int)inputBoundingSpheres.size();
