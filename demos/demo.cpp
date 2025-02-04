@@ -208,6 +208,9 @@ void performGeoPath(const std::vector<Vector<3>>& queryPoints,
                                 std::vector<Vector<3>>& closestPoints,
                                 GPUScene<3>& gpuScene)
 {
+    std::cout << queryPoints.size() << std::endl;
+    std::cout << closestPoints.size() << std::endl;
+
     // initialize bounding spheres
     std::vector<GPUBoundingSphere> inputBoundingSpheres;
     std::vector<GPUBoundingSphere> outputBoundingSpheres;
