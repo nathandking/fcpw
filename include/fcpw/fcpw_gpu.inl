@@ -268,8 +268,8 @@ template<size_t DIM>
 inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputBoundingSpheres,
                                             std::vector<GPUBoundingSphere>& outputBoundingSpheres)
 {
-    std::cout << "computeGeoPath - inputBoundingSpheres size = " << inputBoundingSpheres.size() << std::endl;
-    std::cout << "computeGeoPath - outputBoundingSpheres size = " << outputBoundingSpheres.size() << std::endl;
+    // std::cout << "computeGeoPath - inputBoundingSpheres size = " << inputBoundingSpheres.size() << std::endl;
+    // std::cout << "computeGeoPath - outputBoundingSpheres size = " << outputBoundingSpheres.size() << std::endl;
 
     // initialize shader
     if (geoPathShader.reflection == nullptr) {
