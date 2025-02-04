@@ -961,8 +961,10 @@ public:
 
         prevNbr.resize(nQueries);
         nextNbr.resize(nQueries);
-        prevNbr[0] = 0;
-        nextNbr[nQueries - 1] = nQueries - 1;
+        prevNbr[0] = 100000000;
+        prevNbr[nQueries - 1] = nQueries - 2;
+        nextNbr[0] = 1;
+        nextNbr[nQueries - 1] = 200000000;
         for(uint32_t i = 1; i < nQueries - 1; ++i)
         {
             prevNbr[i] = i - 1;

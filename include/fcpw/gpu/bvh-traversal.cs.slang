@@ -1,5 +1,7 @@
 import fcpw;
 
+#include <limits>
+
 #define UNDEFINED_BVH_TYPE 0
 #define LINE_SEGMENT_BVH 1
 #define TRIANGLE_BVH 2
@@ -121,9 +123,16 @@ void geoPath(uint3 threadId: SV_DispatchThreadID,
 
     float mu = 0.5;
     BoundingSphere s = inputBoundingSpheres[index];
-    for (uint32_t dim = 0; dim < 3; ++dim)
+    if (prevNbr[index] != 100000000 && nextNbr[index] != 200000000)
     {
-        s.c[dim] = inputBoundingSpheres[index].c[dim] + mu * (inputBoundingSpheres[prevNbr[index]].c[dim] - 2.0f * inputBoundingSpheres[index].c[dim] + inputBoundingSpheres[nextNbr[index]].c[dim]);
+        for (uint32_t dim = 0; dim < 3; ++dim)
+        {
+            s.c[dim] = inputBoundingSpheres[index].c[dim] + mu * (inputBoundingSpheres[prevNbr[index]].c[dim] - 2.0f * inputBoundingSpheres[index].c[dim] + inputBoundingSpheres[nextNbr[index]].c[dim]);
+        }
+    }
+    else // fixed endpoints, Dirichlet condition
+    {
+        s = inputBoundingSpheres[index]; 
     }
 
     // bool m_is_closed = false;
