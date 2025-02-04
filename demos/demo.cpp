@@ -462,6 +462,7 @@ void run(bool useGpu)
         start = std::chrono::system_clock::now();
 
         performGeoPath(initial_path, path, scene);
+        std::cout << "Path size = " << path.size() << std::endl;
         
         end = std::chrono::system_clock::now();
         elapsed_seconds = end - start;
