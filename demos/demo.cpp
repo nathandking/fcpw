@@ -212,7 +212,7 @@ void performGeoPath(const std::vector<Vector<3>>& queryPoints,
     }
     outputBoundingSpheres = inputBoundingSpheres;
 
-    for(size_t i = 0; i < path.size(); ++i)
+    for(size_t i = 0; i < inputBoundingSpheres.size(); ++i)
     {
         std::cout << inputBoundingSpheres[i].c.x << " " << inputBoundingSpheres[i].c.y << " " << inputBoundingSpheres[i].c.z << std:: endl;
     }
