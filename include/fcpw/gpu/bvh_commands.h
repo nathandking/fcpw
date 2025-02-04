@@ -176,16 +176,16 @@ void runTraversal(GPUContext& gpuContext,
     }
 
     // read back results from GPU
-    if(!continueIteration)
-    {
-        std::cout << "here in final iteration" << std::endl;
+    // if(!continueIteration)
+    // {
+        // std::cout << "here in final iteration" << std::endl;
         gpuQueryBuffers.read(gpuContext.device, boundingSpheres);
         continueIteration = false;
     
         // synchronize and reset transient heap
         gpuContext.transientHeap->finish();
         gpuContext.transientHeap->synchronizeAndReset();
-    }
+    // }
 
     if (printLogs) {
         double timeSpan = (timestampData[1] - timestampData[0])*1000/timestampFrequency;
