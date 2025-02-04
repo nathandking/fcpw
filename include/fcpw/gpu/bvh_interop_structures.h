@@ -958,7 +958,7 @@ public:
         }
 
         nQueries = (uint32_t)boundingSpheresData.size();
-
+        std::cout << "nQueries = " << nQueries << std::endl;
         prevNbr.resize(nQueries);
         nextNbr.resize(nQueries);
         prevNbr[0] = 100000000;
