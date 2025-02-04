@@ -290,9 +290,9 @@ inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputB
     bool continueIteration = true;
     size_t counter = 0;
     // while(continueIteration)
-    while(counter < 1000)
+    while(counter < 100)
     {
-        if(counter == 1000 - 1)
+        if(counter == 100 - 1)
         {
             continueIteration = false;
         }
