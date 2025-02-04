@@ -268,6 +268,9 @@ template<size_t DIM>
 inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputBoundingSpheres,
                                             std::vector<GPUBoundingSphere>& outputBoundingSpheres)
 {
+    cout << "computeGeoPath - inputBoundingSpheres size = " << inputBoundingSpheres.size() << endl;
+    cout << "computeGeoPath - outputBoundingSpheres size = " << outputBoundingSpheres.size() << endl;
+
     // initialize shader
     if (geoPathShader.reflection == nullptr) {
         loadModuleLibrary(gpuContext, fcpwModule, geoPathShader);
@@ -277,6 +280,9 @@ inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputB
     // create GPU buffers
     GPUGeoPathBuffers gpuGeoPathBuffers;
     gpuGeoPathBuffers.allocate(gpuContext.device, inputBoundingSpheres);
+    
+    cout << "computeGeoPath - gpuGeoPathBuffers.inputBoundingSpheres size = " << gpuGeoPathBuffers.inputBoundingSpheres.size() << endl;
+    cout << "computeGeoPath - gpuGeoPathBuffers.outputBoundingSpheres size = " << gpuGeoPathBuffers.outputBoundingSpheres.size() << endl;
 
     // run closest point shader
     int nQueries = (int)inputBoundingSpheres.size();
