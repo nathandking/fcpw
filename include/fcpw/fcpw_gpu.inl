@@ -301,6 +301,12 @@ inline void GPUScene<DIM>::computeGeoPath(std::vector<GPUBoundingSphere>& inputB
         runTraversal<GPUBvhBuffers, GPUGeoPathBuffers>(gpuContext, geoPathShader,
                                                              gpuBvhBuffers, gpuGeoPathBuffers, outputBoundingSpheres, continueIteration,
                                                              nThreadGroups, printLogs);
+
+
+        for(size_t i = 0; i < outputBoundingSpheres.size(); ++i)
+        {
+            std::cout << outputBoundingSpheres[i].c.x << " " << outputBoundingSpheres[i].c.y << " " << outputBoundingSpheres[i].c.z << std:: endl;
+        }
         ++counter;
     }
 }
