@@ -121,7 +121,7 @@ void geoPath(uint3 threadId: SV_DispatchThreadID,
 
     float mu = 0.5;
     BoundingSphere s = inputBoundingSpheres[index];
-    for (size_t dim = 0; dim < 3; ++dim)
+    for (uint32_t dim = 0; dim < 3; ++dim)
     {
         s.c[dim] = inputBoundingSpheres[index].c[dim] + mu * (inputBoundingSpheres[prevNbr[index]].c[dim] - 2.0f * inputBoundingSpheres[index].c[dim] + inputBoundingSpheres[nextNbr[index]].c[dim]);
     }
