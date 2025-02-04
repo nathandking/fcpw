@@ -123,10 +123,9 @@ void geoPath(uint3 threadId: SV_DispatchThreadID,
     BoundingSphere s = inputBoundingSpheres[index];
     if (prevNbr[index] != 100000000 && nextNbr[index] != 200000000)
     {
-        for (uint32_t dim = 0; dim < 3; ++dim)
-        {
-            s.c[dim] = inputBoundingSpheres[index].c[dim] + mu * (inputBoundingSpheres[prevNbr[index]].c[dim] - 2.0f * inputBoundingSpheres[index].c[dim] + inputBoundingSpheres[nextNbr[index]].c[dim]);
-        }
+        s.c.x = inputBoundingSpheres[index].c.x + mu * (inputBoundingSpheres[prevNbr[index]].c.x - 2.0f * inputBoundingSpheres[index].c.x + inputBoundingSpheres[nextNbr[index]].c.x);
+        s.c.y = inputBoundingSpheres[index].c.y + mu * (inputBoundingSpheres[prevNbr[index]].c.y - 2.0f * inputBoundingSpheres[index].c.y + inputBoundingSpheres[nextNbr[index]].c.y);
+        s.c.z = inputBoundingSpheres[index].c.z + mu * (inputBoundingSpheres[prevNbr[index]].c.z - 2.0f * inputBoundingSpheres[index].c.z + inputBoundingSpheres[nextNbr[index]].c.z);
     }
     else // fixed endpoints, Dirichlet condition
     {
