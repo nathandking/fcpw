@@ -215,7 +215,8 @@ void performGeoPath(const std::vector<Vector<3>>& queryPoints,
         float3 queryPoint = float3{q[0], q[1], q[2]};
         inputBoundingSpheres.emplace_back(GPUBoundingSphere(queryPoint, maxFloat));
     }
-\
+    outputBoundingSpheres = inputBoundingSpheres;
+
     gpuScene.computeGeoPath(inputBoundingSpheres, outputBoundingSpheres);
 
     // extract closest points
