@@ -214,7 +214,7 @@ void performGeoPath(const std::vector<Vector<3>>& queryPoints,
 
     for(size_t i = 0; i < path.size(); ++i)
     {
-        std::cout << inputBoundingSpheres[i].c[0] << " " << inputBoundingSpheres[i].c[1] << " " << inputBoundingSpheres[i].c[2] << std:: endl;
+        std::cout << inputBoundingSpheres[i].c.x << " " << inputBoundingSpheres[i].c.y << " " << inputBoundingSpheres[i].c.z << std:: endl;
     }
 
     gpuScene.computeGeoPath(inputBoundingSpheres, outputBoundingSpheres);
