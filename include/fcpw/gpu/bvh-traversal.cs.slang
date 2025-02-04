@@ -160,6 +160,7 @@ void geoPath(uint3 threadId: SV_DispatchThreadID,
 
     // gPathDiff.add(dist);
     inputBoundingSpheres[index].c = outputBoundingSpheres[index].c;
+    
 }
 
 [shader("compute")]

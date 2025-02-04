@@ -178,6 +178,7 @@ void runTraversal(GPUContext& gpuContext,
     // read back results from GPU
     if(!continueIteration)
     {
+        std::cout << "here in final iteration" << std::endl;
         gpuQueryBuffers.read(gpuContext.device, boundingSpheres);
         continueIteration = false;
     
